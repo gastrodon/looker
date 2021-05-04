@@ -18,12 +18,10 @@ pub async fn handle_verify(
     let channel = message.channel_id;
 
     if !may_verify(ctx, react, verify).await? {
-        channel.say(&ctx.http, "Not allowed").await?;
         return Ok(());
     }
 
     if already_verified(ctx, &message, verify).await? {
-        channel.say(&ctx.http, "Already verify").await?;
         return Ok(());
     };
 
