@@ -78,17 +78,19 @@ async fn may_verify(ctx: &Context, react: &Reaction, verify: Verify) -> Result<b
     Ok(member.permissions(&ctx).await?.contains(verify.permissions))
 }
 
-async fn welcome(ctx: &Context, member: &Member) -> Result<()> {
+async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> {
+    let mut author_mut = author;
+    author_mut.add_role(&ctx.http, verify.role_id).await?;
+
     let readable = ctx.data.read().await;
     let channels = readable.get::<ChannelsKey>().unwrap();
-
     channels
         .welcome
         .say(
             &ctx.http,
             format!(
                 "Welcome to the server {who}. Feel free to add roles in {roles}, and introduce yourself in {introductions}. Don't forget to familiaraize yourself with the rules, and enjoy the server!",
-                who = Mention::from(member),
+                who = Mention::from(&author_mut),
                 roles = Mention::from(channels.roles),
                 introductions = Mention::from(channels.introductions),
             ),
