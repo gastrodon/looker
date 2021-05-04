@@ -13,6 +13,7 @@ static VERIFY_CHANNEL: u64 = 718170301682417754;
 static VERIFY_ROLE: u64 = 528098139044053002;
 
 static INTRODUCTIONS_CHANNEL: u64 = 527581457279877131;
+static LOGS_CHANNEL: u64 = 796242938769571890;
 static ROLES_CHANNEL: u64 = 611966830034026496;
 static WELCOME_CHANNEL: u64 = 807718099235241994;
 
@@ -35,6 +36,7 @@ async fn infil_verify(client: &mut Client) {
 async fn infil_channels(client: &mut Client) {
     let channels = client_data::Channels {
         introductions: ChannelId(INTRODUCTIONS_CHANNEL),
+        logs: ChannelId(LOGS_CHANNEL),
         roles: ChannelId(ROLES_CHANNEL),
         welcome: ChannelId(WELCOME_CHANNEL),
     };

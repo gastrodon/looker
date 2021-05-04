@@ -15,8 +15,6 @@ pub async fn handle_verify(
     verify: Verify,
 ) -> Result<()> {
     let message = react.message(&ctx.http).await?;
-    let channel = message.channel_id;
-
     if !may_verify(ctx, react, verify).await? {
         return Ok(());
     }
@@ -100,13 +98,20 @@ async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> 
     Ok(())
 }
 
-async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> {
-    let mut author_mut = author;
-    author_mut.add_role(&ctx.http, verify.role_id).await?;
-    welcome(ctx, &author_mut).await?;
-    Ok(())
-}
+async fn no_verify(ctx: &Context, author: Member, _: Verify) -> Result<()> {
+    let readable = ctx.data.read().await;
+    let channels = readable.get::<ChannelsKey>().unwrap();
+    channels
+        .logs
+        .say(
+            &ctx.http,
+            format!(
+                "Verification of {who} was rejected, they were kicked",
+                who = Mention::from(&author)
+            ),
+        )
+        .await?;
 
-async fn no_verify(_: &Context, _: Member, _: Verify) -> Result<()> {
+    author.kick(&ctx.http).await?;
     Ok(())
 }
