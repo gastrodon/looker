@@ -27,10 +27,28 @@ pub async fn handle_verify(
         return Ok(());
     };
 
-    match code {
-        EMOJI_CHECK => do_verify(ctx, message, verify).await,
-        EMOJI_CROSS => no_verify(ctx, message, verify).await,
+    let author = match message.channel(&ctx.cache).await {
+        Some(channel) => match channel.guild() {
+            Some(guild_channel) => {
+                guild_channel
+                    .guild_id
+                    .member(&ctx.http, &message.author)
+                    .await?
+            }
+            None => return Err(Error::Other("channel isn't a guild_channel")),
+        },
+        None => return Err(Error::Other("message not in a channel")),
+    };
+
+    let result = match code {
+        EMOJI_CHECK => do_verify(ctx, author, verify).await,
+        EMOJI_CROSS => no_verify(ctx, author, verify).await,
         _ => unreachable!(),
+    };
+
+    match result {
+        Ok(()) => message.delete(&ctx.http).await,
+        Err(why) => Err(why),
     }
 }
 
@@ -82,30 +100,13 @@ async fn welcome(ctx: &Context, member: &Member) -> Result<()> {
     Ok(())
 }
 
-async fn do_verify(ctx: &Context, message: Message, verify: Verify) -> Result<()> {
-    let mut author = match message.channel(&ctx.cache).await {
-        Some(channel) => match channel.guild() {
-            Some(guild_channel) => {
-                guild_channel
-                    .guild_id
-                    .member(&ctx.http, &message.author)
-                    .await?
-            }
-            None => return Err(Error::Other("channel isn't a guild_channel")),
-        },
-        None => return Err(Error::Other("message not in a channel")),
-    };
-
-    author.add_role(&ctx.http, verify.role_id).await?;
-    message.delete(&ctx.http).await?;
-    welcome(ctx, &author).await?;
+async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> {
+    let mut author_mut = author;
+    author_mut.add_role(&ctx.http, verify.role_id).await?;
+    welcome(ctx, &author_mut).await?;
     Ok(())
 }
 
-async fn no_verify(ctx: &Context, message: Message, _: Verify) -> Result<()> {
-    message
-        .channel_id
-        .say(&ctx.http, "Should be not verified")
-        .await?;
+async fn no_verify(_: &Context, _: Member, _: Verify) -> Result<()> {
     Ok(())
 }
