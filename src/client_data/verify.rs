@@ -8,6 +8,7 @@ use serenity::{
 pub struct Verify {
     pub channel_id: ChannelId,
     pub role_id: RoleId,
+    pub unverified: RoleId,
     pub permissions: Permissions,
 }
 
