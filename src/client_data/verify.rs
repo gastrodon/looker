@@ -7,7 +7,7 @@ use serenity::{
 #[derive(Clone, Copy)]
 pub struct Verify {
     pub channel_id: ChannelId,
-    pub role_id: RoleId,
+    pub verified: RoleId,
     pub unverified: RoleId,
     pub permissions: Permissions,
 }

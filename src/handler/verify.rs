@@ -59,7 +59,7 @@ async fn already_verified(ctx: &Context, message: &Message, verify: Verify) -> R
 
     Ok(message
         .author
-        .has_role(&ctx.http, guild_id, verify.role_id)
+        .has_role(&ctx.http, guild_id, verify.verified)
         .await?)
 }
 
@@ -78,7 +78,7 @@ async fn may_verify(ctx: &Context, react: &Reaction, verify: Verify) -> Result<b
 
 async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> {
     let mut author_mut = author;
-    author_mut.add_role(&ctx.http, verify.role_id).await?;
+    author_mut.add_role(&ctx.http, verify.verified).await?;
 
     let readable = ctx.data.read().await;
     let channels = readable.get::<ChannelsKey>().unwrap();

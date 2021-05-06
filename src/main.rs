@@ -10,8 +10,8 @@ use serenity::{
 };
 
 static VERIFY_CHANNEL: u64 = 718170301682417754;
-static VERIFY_ROLE: u64 = 528098139044053002;
-static UNVERIFY_ROLE: u64 = 836752745665921044;
+static VERIFIED_ROLE: u64 = 528098139044053002;
+static UNVERIFIED_ROLE: u64 = 836752745665921044;
 
 static INTRODUCTIONS_CHANNEL: u64 = 527581457279877131;
 static LOGS_CHANNEL: u64 = 796242938769571890;
@@ -21,8 +21,8 @@ static WELCOME_CHANNEL: u64 = 807718099235241994;
 async fn infil_verify(client: &mut Client) {
     let verify = client_data::Verify {
         channel_id: ChannelId(VERIFY_CHANNEL),
-        role_id: RoleId(VERIFY_ROLE),
-        unverified: RoleId(UNVERIFY_ROLE),
+        verified: RoleId(VERIFIED_ROLE),
+        unverified: RoleId(UNVERIFIED_ROLE),
         permissions: Permissions::MANAGE_ROLES
             | Permissions::MANAGE_MESSAGES
             | Permissions::KICK_MEMBERS,
