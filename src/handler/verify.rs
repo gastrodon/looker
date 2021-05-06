@@ -79,6 +79,7 @@ async fn may_verify(ctx: &Context, react: &Reaction, verify: Verify) -> Result<b
 async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> {
     let mut author_mut = author;
     author_mut.add_role(&ctx.http, verify.verified).await?;
+    author_mut.remove_role(&ctx.http, verify.unverified).await?;
 
     let readable = ctx.data.read().await;
     let channels = readable.get::<ChannelsKey>().unwrap();
