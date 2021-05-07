@@ -79,7 +79,12 @@ async fn collect_chunks(ctx: &Context, guild: &Guild) -> Result<Vec<Vec<Member>>
         let mut last = Option::<UserId>::None;
 
         loop {
-            let mut buffer = guild.members(&ctx, None, last).await?;
+            let mut buffer = guild
+                .members(&ctx, None, last)
+                .await?
+                .into_iter()
+                .filter(|it| !it.user.bot)
+                .collect::<Vec<Member>>();
 
             if buffer.is_empty() {
                 break;
