@@ -4,14 +4,14 @@ use serenity::{
     framework::standard::{Args, CommandResult},
     model::channel::Message,
     model::guild::{Guild, Member},
-    model::id::{GuildId, UserId},
+    model::id::UserId,
     prelude::Context,
     Result,
 };
 use std::thread;
 use tokio::runtime::Handle;
 
-const ROLE_CHECK_THREADS: usize = 128;
+const ROLE_CHECK_THREADS: usize = 32;
 const ROLE_CHECK_CHUNK_MIN: usize = 4;
 
 macro_rules! chunk_size {
@@ -24,39 +24,25 @@ macro_rules! chunk_size {
     };
 }
 
-async fn dispatch_collect_uvs(
-    ctx: &Context,
-    chunks: Vec<Vec<Member>>,
-    guild_id: GuildId,
-) -> Vec<Member> {
-    println!("{} chunks", chunks.len());
-
+async fn dispatch_collect_uvs(ctx: &Context, chunks: Vec<Vec<Member>>) -> Vec<Member> {
     let handles = {
         let role_id = ctx.data.read().await.get::<VerifyKey>().unwrap().verified;
-        let http = ctx.http.clone();
-
         let mut handles = vec![];
-        for (count, chunk) in chunks.into_iter().enumerate() {
+
+        for chunk in chunks {
             let handle = {
                 let tokio_handle = Handle::current();
-                let http = http.clone();
 
                 thread::spawn(move || {
                     tokio_handle.spawn(async move {
                         let mut uvs = Vec::<Member>::new();
 
                         for who in chunk {
-                            println!("{}: checking {}", count, who.user.name);
-
-                            match who.user.has_role(&http, guild_id, role_id).await {
-                                Ok(result) => {
-                                    println!("{}: checked {}", count, who.user.name);
-                                    if !result {
-                                        uvs.push(who);
-                                    };
-                                }
-                                Err(why) => panic!("{:?}", why),
+                            if who.roles.iter().any(|it| *it == role_id) {
+                                continue;
                             }
+
+                            uvs.push(who)
                         }
 
                         uvs
@@ -146,11 +132,11 @@ pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandRes
     })
     .await;
 
-    let uvs = dispatch_collect_uvs(ctx, chunks, guild.id)
+    let uvs = dispatch_collect_uvs(ctx, chunks)
         .await
         .iter()
-        .map(|it| it.user.name.clone())
-        .collect::<Vec<String>>()
+        .map(|it| it.user.name.as_str())
+        .collect::<Vec<&str>>()
         .join("\n");
 
     sent.edit(&ctx, |it| it.content(uvs)).await;
