@@ -1,3 +1,4 @@
+use super::UNVERIFIED_COMMAND;
 use serenity::{
     framework::standard::macros::{command, group},
     framework::standard::{Args, CommandResult},
@@ -6,7 +7,7 @@ use serenity::{
 };
 
 #[group]
-#[commands(about)]
+#[commands(about, unverified)]
 struct General;
 
 #[command]
