@@ -1,10 +1,12 @@
 use crate::client_data::VerifyKey;
+use chrono::offset::Utc;
 use serenity::{
     framework::standard::macros::command,
     framework::standard::{Args, CommandResult},
     model::channel::Message,
     model::guild::{Guild, Member},
     model::id::UserId,
+    model::misc::Mention,
     prelude::Context,
     Result,
 };
@@ -21,6 +23,17 @@ macro_rules! chunk_size {
         } else {
             $it / ROLE_CHECK_THREADS
         }
+    };
+}
+
+macro_rules! fmt_duration {
+    ($it:expr) => {
+        format!(
+            "`{days}d {hours}h {minutes}m`",
+            days = $it.num_days(),
+            hours = $it.num_hours() - ($it.num_days() * 24),
+            minutes = $it.num_minutes() - ($it.num_hours() * 60),
+        )
     };
 }
 
@@ -113,6 +126,28 @@ async fn collect_chunks(ctx: &Context, guild: &Guild) -> Result<Vec<Vec<Member>>
     Ok(chunks)
 }
 
+#[inline]
+fn draw_uvs(members: Vec<Member>) -> String {
+    let now = Utc::now();
+
+    members
+        .iter()
+        .map(|who| {
+            let diff = match who.joined_at {
+                Some(when) => now.signed_duration_since(when),
+                None => panic!("{} never joined", who.user.name), // TODO
+            };
+
+            format!(
+                "{mention} unverified for {time}",
+                mention = Mention::from(who).to_string(),
+                time = fmt_duration!(diff),
+            )
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
 #[command]
 pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandResult {
     let mut sent = match message.channel_id.say(&ctx.http, "collecting").await {
@@ -137,13 +172,8 @@ pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandRes
     })
     .await;
 
-    let uvs = dispatch_collect_uvs(ctx, chunks)
-        .await
-        .iter()
-        .map(|it| it.user.name.as_str())
-        .collect::<Vec<&str>>()
-        .join("\n");
+    let uvs = dispatch_collect_uvs(ctx, chunks).await;
 
-    sent.edit(&ctx, |it| it.content(uvs)).await;
+    sent.edit(&ctx, |it| it.content(draw_uvs(uvs))).await;
     Ok(())
 }
