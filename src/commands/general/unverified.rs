@@ -1,4 +1,5 @@
 use crate::client_data::VerifyKey;
+use crate::{edit, maybe};
 use chrono::offset::Utc;
 use serenity::{
     framework::standard::macros::command,
@@ -86,7 +87,7 @@ async fn dispatch_collect_uvs(ctx: &Context, chunks: Vec<Vec<Member>>) -> Vec<Me
     collected
 }
 
-async fn collect_chunks(ctx: &Context, guild: &Guild) -> Result<Vec<Vec<Member>>> {
+async fn collect_chunks(ctx: &Context, guild: Guild) -> Result<Vec<Vec<Member>>> {
     let entire = {
         let mut collected = Vec::<Member>::new();
         let mut last = Option::<UserId>::None;
@@ -153,30 +154,26 @@ fn draw_uvs(mut members: Vec<Member>) -> String {
 #[command]
 #[aliases("uvs")]
 pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandResult {
-    let mut sent = match message.channel_id.say(&ctx.http, "collecting roster").await {
-        Ok(message) => message,
-        Err(_) => return Ok(()), // TODO this should be a macro
-    };
+    let channel = message.channel_id;
+    let mut sent = maybe!(channel.say(&ctx.http, "collecting roster").await, Result);
 
-    let guild = {
-        match message.guild(&ctx.cache).await {
-            Some(guild) => guild,
-            None => return Ok(()),
-        }
-    };
+    let chunks = maybe!(
+        collect_chunks(ctx, maybe!(message.guild(&ctx.cache).await, Option)).await,
+        Result
+    );
 
-    let chunks = match collect_chunks(ctx, &guild).await {
-        Ok(chunks) => chunks,
-        Err(_) => return Ok(()),
-    };
-
-    sent.edit(&ctx, |it| {
-        it.content(format!("filtering {} user chunks", chunks.len()))
-    })
-    .await;
+    maybe!(
+        edit!(
+            &ctx.http,
+            sent,
+            format!("filtering {} user chunks", chunks.len())
+        ),
+        Result
+    );
 
     let uvs = dispatch_collect_uvs(ctx, chunks).await;
 
-    sent.edit(&ctx, |it| it.content(draw_uvs(uvs))).await;
+    maybe!(edit!(&ctx.http, sent, draw_uvs(uvs)), Result);
+
     Ok(())
 }
