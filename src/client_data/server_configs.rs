@@ -24,7 +24,7 @@ impl Channels {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct ServerConfig {
     channels: Channels,
 }
@@ -37,13 +37,7 @@ impl ServerConfig {
     }
 }
 
-impl Default for ServerConfig {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Default, Eq, PartialEq)]
 pub struct ServerConfigTable {
     cache: HashMap<u64, ServerConfig>,
 }
@@ -69,12 +63,6 @@ impl ServerConfigTable {
 
     pub fn provision<'a, T: Into<&'a u64>>(&mut self, key: T) -> Option<ServerConfig> {
         self.cache.insert(*key.into(), ServerConfig::new())
-    }
-}
-
-impl Default for ServerConfigTable {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
