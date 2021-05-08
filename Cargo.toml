@@ -6,6 +6,9 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[dependencies.chrono]
+version = "0.4.10" # Same as serenity Cargo.toml
+
 [dependencies.serenity]
 version = "~0.10"
 features = ["framework", "standard_framework", "rustls_backend"]
