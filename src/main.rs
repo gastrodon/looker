@@ -1,6 +1,7 @@
 mod client_data;
 mod commands;
 mod handler;
+mod macros;
 
 use serenity::{
     framework::standard::StandardFramework,
