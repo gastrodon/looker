@@ -1,22 +1,39 @@
 use serenity::{model::id::ChannelId, prelude::TypeMapKey};
 use std::{collections::HashMap, convert::Into, default::Default};
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Channels {
     pub introduction: Option<ChannelId>,
+    pub jail: Option<ChannelId>,
     pub log: Option<ChannelId>,
     pub role: Option<ChannelId>,
+    pub verify: Option<ChannelId>,
     pub welcome: Option<ChannelId>,
+}
+
+impl Channels {
+    pub fn new() -> Self {
+        Channels {
+            introduction: None,
+            jail: None,
+            log: None,
+            role: None,
+            verify: None,
+            welcome: None,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct ServerConfig {
-    channels: Option<Channels>,
+    channels: Channels,
 }
 
 impl ServerConfig {
     pub fn new() -> Self {
-        ServerConfig { channels: None }
+        ServerConfig {
+            channels: Channels::new(),
+        }
     }
 }
 
