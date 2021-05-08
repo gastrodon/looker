@@ -127,9 +127,10 @@ async fn collect_chunks(ctx: &Context, guild: &Guild) -> Result<Vec<Vec<Member>>
 }
 
 #[inline]
-fn draw_uvs(members: Vec<Member>) -> String {
+fn draw_uvs(mut members: Vec<Member>) -> String {
     let now = Utc::now();
 
+    members.sort_by_key(|who| who.joined_at);
     members
         .iter()
         .map(|who| {
@@ -144,11 +145,13 @@ fn draw_uvs(members: Vec<Member>) -> String {
                 time = fmt_duration!(diff),
             )
         })
+        .rev()
         .collect::<Vec<String>>()
         .join("\n")
 }
 
 #[command]
+#[aliases("uvs")]
 pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandResult {
     let mut sent = match message.channel_id.say(&ctx.http, "collecting").await {
         Ok(message) => message,
