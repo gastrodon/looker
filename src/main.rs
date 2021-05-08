@@ -51,6 +51,14 @@ async fn infil_channels(client: &mut Client) {
         .insert::<client_data::ChannelsKey>(channels);
 }
 
+async fn infil_configs(client: &mut Client) {
+    client
+        .data
+        .write()
+        .await
+        .insert::<client_data::ServerConfigKey>(client_data::ServerConfigTable::new());
+}
+
 #[tokio::main]
 async fn main() {
     let token = std::env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN missing");
@@ -69,6 +77,7 @@ async fn main() {
 
     infil_verify(&mut client).await;
     infil_channels(&mut client).await;
+    infil_configs(&mut client).await;
 
     if let Err(why) = client.start().await {
         println!("{:?}", why);
