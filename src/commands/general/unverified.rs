@@ -93,7 +93,7 @@ async fn collect_chunks(ctx: &Context, guild: &Guild) -> Result<Vec<Vec<Member>>
 
         loop {
             let mut buffer = guild
-                .members(&ctx, None, last)
+                .members(&ctx, Some(1000), last)
                 .await?
                 .into_iter()
                 .filter(|it| !it.user.bot)
@@ -153,7 +153,7 @@ fn draw_uvs(mut members: Vec<Member>) -> String {
 #[command]
 #[aliases("uvs")]
 pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandResult {
-    let mut sent = match message.channel_id.say(&ctx.http, "collecting").await {
+    let mut sent = match message.channel_id.say(&ctx.http, "collecting roster").await {
         Ok(message) => message,
         Err(_) => return Ok(()), // TODO this should be a macro
     };
@@ -171,7 +171,7 @@ pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandRes
     };
 
     sent.edit(&ctx, |it| {
-        it.content(format!("collecting {}", chunks.len()))
+        it.content(format!("filtering {} user chunks", chunks.len()))
     })
     .await;
 
