@@ -27,6 +27,7 @@ kind may be one of
 
 #[command]
 #[only_in("guild")]
+#[required_permissions("MANAGE_CHANNELS")]
 pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> CommandResult {
     let channel = message.channel_id;
 
@@ -66,5 +67,6 @@ pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> Comma
 
     config.set(id, table);
     handle.insert::<ServerConfigKey>(config);
+    maybe!(edit!(&ctx.http, sent, "config set"), Result);
     Ok(())
 }
