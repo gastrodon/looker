@@ -35,6 +35,11 @@ impl ServerConfig {
             channels: Channels::new(),
         }
     }
+
+    pub fn have_channels(&mut self, channels: Channels) -> Channels {
+        self.channels = channels;
+        channels
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
