@@ -26,7 +26,7 @@ impl Channels {
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ServerConfig {
-    channels: Channels,
+    pub channels: Channels,
 }
 
 impl ServerConfig {
