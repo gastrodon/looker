@@ -26,6 +26,7 @@ kind may be one of
 ```"#;
 
 #[command]
+#[only_in("guild")]
 pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> CommandResult {
     let channel = message.channel_id;
 
@@ -39,7 +40,9 @@ pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> Comma
 
     let mut handle = ctx.data.write().await;
     let mut config = handle.get::<ServerConfigKey>().unwrap().clone();
-    let mut table = *config.get(1_u64).unwrap_or(&ServerConfig::new());
+    let id = message.guild_id.unwrap();
+    let mut table = *config.get(id).unwrap_or(&ServerConfig::new());
+
     while let (Ok(name), Ok(channel)) = (args.single::<String>(), args.single::<ChannelId>()) {
         match name.as_str() {
             "introduction" => table.channels.introduction = Some(channel),
@@ -61,7 +64,7 @@ pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> Comma
         };
     }
 
-    config.set(1_u64, table);
+    config.set(id, table);
     handle.insert::<ServerConfigKey>(config);
     Ok(())
 }
