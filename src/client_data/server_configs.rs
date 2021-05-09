@@ -1,7 +1,7 @@
 use serenity::{model::id::ChannelId, prelude::TypeMapKey};
 use std::{collections::HashMap, convert::Into, default::Default};
 
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Channels {
     pub introduction: Option<ChannelId>,
     pub jail: Option<ChannelId>,
@@ -24,7 +24,7 @@ impl Channels {
     }
 }
 
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ServerConfig {
     channels: Channels,
 }
@@ -37,7 +37,7 @@ impl ServerConfig {
     }
 }
 
-#[derive(Clone, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ServerConfigTable {
     cache: HashMap<u64, ServerConfig>,
 }
