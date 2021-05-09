@@ -54,20 +54,20 @@ impl ServerConfigTable {
         }
     }
 
-    pub fn get<'a, T: Into<&'a u64>>(&self, key: T) -> Option<&ServerConfig> {
-        self.cache.get(key.into())
+    pub fn get<T: Into<u64>>(&self, key: T) -> Option<&ServerConfig> {
+        self.cache.get(&key.into())
     }
 
-    pub fn set<'a, T: Into<&'a u64>, V: Into<ServerConfig>>(
+    pub fn set<T: Into<u64>, V: Into<ServerConfig>>(
         &mut self,
         key: T,
         value: V,
     ) -> Option<ServerConfig> {
-        self.cache.insert(*key.into(), value.into())
+        self.cache.insert(key.into(), value.into())
     }
 
-    pub fn provision<'a, T: Into<&'a u64>>(&mut self, key: T) -> Option<ServerConfig> {
-        self.cache.insert(*key.into(), ServerConfig::new())
+    pub fn provision<T: Into<u64>>(&mut self, key: T) -> Option<ServerConfig> {
+        self.cache.insert(key.into(), ServerConfig::new())
     }
 }
 
