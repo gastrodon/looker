@@ -67,7 +67,8 @@ async fn main() {
         .configure(|it| it.prefix("-").allow_dm(false))
         .bucket("ratelimit", |it| it.limit(2).time_span(1))
         .await
-        .group(&commands::GENERAL_GROUP);
+        .group(&commands::GENERAL_GROUP)
+        .group(&commands::CONFIGURE_GROUP);
 
     let mut client = Client::builder(&token)
         .event_handler(handler::Handler)
