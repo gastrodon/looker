@@ -1,4 +1,10 @@
-use serenity::{model::id::ChannelId, prelude::TypeMapKey};
+use serenity::{
+    model::{
+        guild::Member,
+        id::{ChannelId, RoleId, UserId},
+    },
+    prelude::TypeMapKey,
+};
 use std::{collections::HashMap, convert::Into, default::Default};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -24,21 +30,27 @@ impl Channels {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ServerConfig {
     pub channels: Channels,
+    pub kept_roles: HashMap<UserId, Vec<RoleId>>,
 }
 
 impl ServerConfig {
     pub fn new() -> Self {
         ServerConfig {
             channels: Channels::new(),
+            kept_roles: HashMap::new(),
         }
     }
 
     pub fn have_channels(&mut self, channels: Channels) -> Channels {
         self.channels = channels;
         channels
+    }
+
+    pub fn keep_roles(&mut self, who: Member) {
+        self.kept_roles.insert(who.user.id, who.roles);
     }
 }
 

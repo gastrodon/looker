@@ -42,7 +42,7 @@ pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> Comma
     let mut handle = ctx.data.write().await;
     let mut config = handle.get::<ServerConfigKey>().unwrap().clone();
     let id = message.guild_id.unwrap();
-    let mut table = *config.get(id).unwrap_or(&ServerConfig::new());
+    let mut table = config.get(id).unwrap_or(&ServerConfig::new()).clone();
 
     while let (Ok(name), Ok(channel)) = (args.single::<String>(), args.single::<ChannelId>()) {
         match name.as_str() {
