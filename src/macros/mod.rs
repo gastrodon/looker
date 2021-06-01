@@ -23,3 +23,16 @@ macro_rules! edit {
         $message.edit($http, |it| it.content($content)).await
     };
 }
+
+#[macro_export]
+macro_rules! config_for {
+    ($id:expr, $handle:expr) => {
+        $handle
+            .get::<ServerConfigKey>()
+            .unwrap()
+            .clone()
+            .get($id)
+            .unwrap_or(&ServerConfig::new())
+            .clone();
+    };
+}

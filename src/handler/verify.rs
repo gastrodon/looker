@@ -1,9 +1,13 @@
 use super::{EMOJI_CHECK, EMOJI_CROSS};
-use crate::client_data::{ChannelsKey, Verify};
+use crate::client_data::ServerConfig;
 use serenity::{
-    model::channel::{Message, Reaction},
-    model::guild::Member,
-    model::misc::Mention,
+    model::{
+        channel::{Message, Reaction},
+        guild::Member,
+        id::RoleId,
+        misc::Mention,
+        permissions::Permissions,
+    },
     prelude::Context,
     Error, Result,
 };
@@ -12,14 +16,14 @@ pub async fn handle_verify(
     ctx: &Context,
     react: &Reaction,
     code: &str,
-    verify: Verify,
+    config: ServerConfig,
 ) -> Result<()> {
-    let message = react.message(&ctx.http).await?;
-    if !may_verify(ctx, react, verify).await? {
+    if !may_verify(ctx, react, config.verify.permissions_required).await? {
         return Ok(());
     }
 
-    if already_verified(ctx, &message, verify).await? {
+    let message = react.message(&ctx.http).await?;
+    if already_verified(ctx, &message, config.verify.verified_id).await? {
         return Ok(());
     };
 
@@ -37,8 +41,8 @@ pub async fn handle_verify(
     };
 
     let result = match code {
-        EMOJI_CHECK => do_verify(ctx, author, verify).await,
-        EMOJI_CROSS => no_verify(ctx, author, verify).await,
+        EMOJI_CHECK => do_verify(ctx, author, config).await,
+        EMOJI_CROSS => no_verify(ctx, author, config).await,
         _ => unreachable!(),
     };
 
@@ -48,7 +52,11 @@ pub async fn handle_verify(
     }
 }
 
-async fn already_verified(ctx: &Context, message: &Message, verify: Verify) -> Result<bool> {
+async fn already_verified(
+    ctx: &Context,
+    message: &Message,
+    role_id: Option<RoleId>,
+) -> Result<bool> {
     let guild_id = match message.channel(&ctx.cache).await {
         Some(channel) => match channel.guild() {
             Some(guild_channel) => guild_channel.guild_id,
@@ -57,13 +65,13 @@ async fn already_verified(ctx: &Context, message: &Message, verify: Verify) -> R
         None => return Err(Error::Other("message not in a channel")),
     };
 
-    Ok(message
-        .author
-        .has_role(&ctx.http, guild_id, verify.verified)
-        .await?)
+    match role_id {
+        Some(role_id) => message.author.has_role(&ctx.http, guild_id, role_id).await,
+        None => Ok(false),
+    }
 }
 
-async fn may_verify(ctx: &Context, react: &Reaction, verify: Verify) -> Result<bool> {
+async fn may_verify(ctx: &Context, react: &Reaction, permissions: Permissions) -> Result<bool> {
     let member = match react.guild_id {
         Some(guild_id) => {
             guild_id
@@ -73,46 +81,60 @@ async fn may_verify(ctx: &Context, react: &Reaction, verify: Verify) -> Result<b
         None => return Err(Error::Other("react not in a guild")),
     };
 
-    Ok(member.permissions(&ctx).await?.contains(verify.permissions))
+    Ok(member.permissions(&ctx).await?.contains(permissions))
 }
 
-async fn do_verify(ctx: &Context, author: Member, verify: Verify) -> Result<()> {
+async fn do_verify(ctx: &Context, author: Member, config: ServerConfig) -> Result<()> {
     let mut author_mut = author;
-    author_mut.add_role(&ctx.http, verify.verified).await?;
-    author_mut.remove_role(&ctx.http, verify.unverified).await?;
+    if let Some(role) = config.verify.verified_id {
+        author_mut.add_role(&ctx.http, role).await?
+    }
 
-    let readable = ctx.data.read().await;
-    let channels = readable.get::<ChannelsKey>().unwrap();
-    channels
-        .welcome
-        .say(
-            &ctx.http,
-            format!(
-                "Welcome to the server {who}. Feel free to add roles in {roles}, and introduce yourself in {introductions}. Don't forget to familiaraize yourself with the rules, and enjoy the server!",
-                who = Mention::from(&author_mut),
-                roles = Mention::from(channels.roles),
-                introductions = Mention::from(channels.introductions),
+    if let Some(role) = config.verify.unverified_id {
+        author_mut.remove_role(&ctx.http, role).await?;
+    }
+
+    if let Some(welcome) = config.channels.welcome {
+        let mention = Mention::from(&author_mut);
+        let message = match (config.channels.role, config.channels.introduction) {
+            (Some(role), Some(intro)) => format!(
+                    "Welcome to the server, {who}. Feel free to grab some roles in {role}, or introduce yourself in {intro}",
+                who = mention,
+                role = Mention::from(role),
+                intro = Mention::from(intro),
             ),
-        )
-        .await?;
+            (Some(role), None) => format!(
+                    "Welcome to the server, {who}. Feel free to grab some roles in {role}",
+                who = mention,
+                role = Mention::from(role),
+            ),
+            (None, Some(intro)) => format!(
+                "Welcome to the server, {who}. Feel free to introduce yourself in {intro}",
+                who = mention,
+                intro = Mention::from(intro),
+            ),
+            (None, None) => format!("Welcome to the server, {who}.", who = mention,),
+        };
+
+        welcome.say(&ctx.http, message).await?;
+    }
 
     Ok(())
 }
 
-async fn no_verify(ctx: &Context, author: Member, _: Verify) -> Result<()> {
-    let readable = ctx.data.read().await;
-    let channels = readable.get::<ChannelsKey>().unwrap();
-    channels
-        .logs
-        .say(
+async fn no_verify(ctx: &Context, author: Member, config: ServerConfig) -> Result<()> {
+    author.kick(&ctx.http).await?;
+
+    if let Some(log) = config.channels.log {
+        log.say(
             &ctx.http,
             format!(
-                "Verification of {who} was rejected, they were kicked",
+                "{who} was rejected and kicked",
                 who = Mention::from(&author)
             ),
         )
         .await?;
+    };
 
-    author.kick(&ctx.http).await?;
     Ok(())
 }

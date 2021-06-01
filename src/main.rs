@@ -3,60 +3,46 @@ mod commands;
 mod handler;
 mod macros;
 
+use client_data::{Channels, ServerConfig, ServerConfigKey, Verify};
 use serenity::{
     framework::standard::StandardFramework,
-    model::id::{ChannelId, RoleId},
-    model::permissions::Permissions,
+    model::id::{ChannelId, GuildId, RoleId},
     prelude::Client,
 };
 
-static VERIFY_CHANNEL: u64 = 718170301682417754;
-static VERIFIED_ROLE: u64 = 528098139044053002;
-static UNVERIFIED_ROLE: u64 = 836752745665921044;
-
-static INTRODUCTIONS_CHANNEL: u64 = 527581457279877131;
-static LOGS_CHANNEL: u64 = 796242938769571890;
-static ROLES_CHANNEL: u64 = 611966830034026496;
-static WELCOME_CHANNEL: u64 = 807718099235241994;
-
-async fn infil_verify(client: &mut Client) {
-    let verify = client_data::Verify {
-        channel_id: ChannelId(VERIFY_CHANNEL),
-        verified: RoleId(VERIFIED_ROLE),
-        unverified: RoleId(UNVERIFIED_ROLE),
-        permissions: Permissions::MANAGE_ROLES
-            | Permissions::MANAGE_MESSAGES
-            | Permissions::KICK_MEMBERS,
-    };
-
-    client
-        .data
-        .write()
-        .await
-        .insert::<client_data::VerifyKey>(verify);
-}
-
-async fn infil_channels(client: &mut Client) {
-    let channels = client_data::Channels {
-        introductions: ChannelId(INTRODUCTIONS_CHANNEL),
-        logs: ChannelId(LOGS_CHANNEL),
-        roles: ChannelId(ROLES_CHANNEL),
-        welcome: ChannelId(WELCOME_CHANNEL),
-    };
-
-    client
-        .data
-        .write()
-        .await
-        .insert::<client_data::ChannelsKey>(channels);
-}
-
-async fn infil_configs(client: &mut Client) {
+async fn populate_config_table(client: &mut Client) {
     client
         .data
         .write()
         .await
         .insert::<client_data::ServerConfigKey>(client_data::ServerConfigTable::new());
+}
+
+// TODO this is going away when we are database backed
+async fn trans_default_config(client: &mut Client) {
+    let trans_id = GuildId(527575883603509248);
+    let mut handle = client.data.write().await;
+    let mut config = config_for!(trans_id, handle);
+
+    config.channels = Channels {
+        introduction: Some(ChannelId(527581457279877131)),
+        jail: Some(ChannelId(796061859659776041)),
+        log: Some(ChannelId(796242938769571890)),
+        role: Some(ChannelId(611966830034026496)),
+        verify: Some(ChannelId(718170301682417754)),
+        welcome: Some(ChannelId(807718099235241994)),
+    };
+
+    config.verify = Verify::new(
+        Some(RoleId(528098139044053002)),
+        Some(RoleId(836752745665921044)),
+        None,
+    );
+
+    let mut table = handle.get::<ServerConfigKey>().unwrap().clone();
+    table.set(trans_id, config);
+    handle.insert::<ServerConfigKey>(table);
+    println!("trans server config set");
 }
 
 #[tokio::main]
@@ -76,9 +62,8 @@ async fn main() {
         .await
         .expect("Client::builder failed");
 
-    infil_verify(&mut client).await;
-    infil_channels(&mut client).await;
-    infil_configs(&mut client).await;
+    populate_config_table(&mut client).await;
+    trans_default_config(&mut client).await;
 
     if let Err(why) = client.start().await {
         println!("{:?}", why);

@@ -2,6 +2,7 @@ use serenity::{
     model::{
         guild::Member,
         id::{ChannelId, RoleId, UserId},
+        permissions::Permissions,
     },
     prelude::TypeMapKey,
 };
@@ -30,10 +31,38 @@ impl Channels {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Verify {
+    pub verified_id: Option<RoleId>,
+    pub unverified_id: Option<RoleId>,
+    pub permissions_required: Permissions,
+}
+
+impl Verify {
+    pub fn new(
+        verified: Option<RoleId>,
+        unverified: Option<RoleId>,
+        permissions: Option<Permissions>,
+    ) -> Self {
+        #[rustfmt::skip]
+        let default_permission =
+                  Permissions::MANAGE_ROLES
+                | Permissions::MANAGE_MESSAGES
+                | Permissions::KICK_MEMBERS;
+
+        Verify {
+            verified_id: verified,
+            unverified_id: unverified,
+            permissions_required: permissions.unwrap_or(default_permission),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ServerConfig {
     pub channels: Channels,
     pub kept_roles: HashMap<UserId, Vec<RoleId>>,
+    pub verify: Verify,
 }
 
 impl ServerConfig {
@@ -41,6 +70,7 @@ impl ServerConfig {
         ServerConfig {
             channels: Channels::new(),
             kept_roles: HashMap::new(),
+            verify: Verify::new(None, None, None),
         }
     }
 

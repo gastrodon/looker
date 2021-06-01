@@ -1,12 +1,12 @@
-use crate::client_data::VerifyKey;
-use crate::{edit, maybe};
+use crate::client_data::{ServerConfig, ServerConfigKey};
+use crate::{config_for, edit, maybe};
 use chrono::offset::Utc;
 use serenity::{
     framework::standard::macros::command,
     framework::standard::{Args, CommandResult},
     model::channel::Message,
     model::guild::{Guild, Member},
-    model::id::UserId,
+    model::id::{RoleId, UserId},
     model::misc::Mention,
     prelude::Context,
     Result,
@@ -38,9 +38,8 @@ macro_rules! fmt_duration {
     };
 }
 
-async fn dispatch_collect_uvs(ctx: &Context, chunks: Vec<Vec<Member>>) -> Vec<Member> {
+async fn dispatch_collect_uvs(chunks: Vec<Vec<Member>>, role_id: RoleId) -> Vec<Member> {
     let handles = {
-        let role_id = ctx.data.read().await.get::<VerifyKey>().unwrap().verified;
         let mut handles = vec![];
 
         for chunk in chunks {
@@ -51,6 +50,7 @@ async fn dispatch_collect_uvs(ctx: &Context, chunks: Vec<Vec<Member>>) -> Vec<Me
                     tokio_handle.spawn(async move {
                         let mut uvs = Vec::<Member>::new();
 
+                        // TODO why am I pushing manually instead of using .filter() or something
                         for who in chunk {
                             if who.roles.iter().any(|it| *it == role_id) {
                                 continue;
@@ -157,6 +157,16 @@ pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandRes
     let channel = message.channel_id;
     let mut sent = maybe!(channel.say(&ctx.http, "collecting roster").await, Result);
 
+    let config = match message.guild_id {
+        Some(guild_id) => config_for!(guild_id, ctx.data.read().await),
+        None => return Ok(()),
+    };
+
+    let verify_role = match config.verify.verified_id {
+        Some(id) => id,
+        None => panic!("no verify role"),
+    };
+
     let chunks = maybe!(
         collect_chunks(ctx, maybe!(message.guild(&ctx.cache).await, Option)).await,
         Result
@@ -171,9 +181,7 @@ pub async fn unverified(ctx: &Context, message: &Message, _: Args) -> CommandRes
         Result
     );
 
-    let uvs = dispatch_collect_uvs(ctx, chunks).await;
-
+    let uvs = dispatch_collect_uvs(chunks, verify_role).await;
     maybe!(edit!(&ctx.http, sent, draw_uvs(uvs)), Result);
-
     Ok(())
 }
