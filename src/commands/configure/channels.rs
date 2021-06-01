@@ -26,6 +26,7 @@ kind may be one of
 ```"#;
 
 #[command]
+#[aliases("channel")]
 #[only_in("guild")]
 #[required_permissions("MANAGE_CHANNELS")]
 pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> CommandResult {
