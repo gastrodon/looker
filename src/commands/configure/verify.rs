@@ -23,7 +23,7 @@ async fn set_role(ctx: &Context, channel: Channel, args: Args, kind: &str) -> Co
         Result
     );
 
-    let mut name = String::new();
+    let name;
     let guild = channel.guild().unwrap().guild(&ctx.cache).await.unwrap();
     let role_id = if let Ok(role_id) = args.parse::<RoleId>() {
         println!("{:?}", role_id);
