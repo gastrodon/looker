@@ -101,19 +101,19 @@ async fn do_verify(ctx: &Context, author: Member, config: ServerConfig) -> Resul
                     "Welcome to the server, {who}. Feel free to grab some roles in {role}, or introduce yourself in {intro}",
                 who = mention,
                 role = Mention::from(role),
-                intro = Mention::from(intro),
+                intro = Mention::from(intro)
             ),
             (Some(role), None) => format!(
                     "Welcome to the server, {who}. Feel free to grab some roles in {role}",
                 who = mention,
-                role = Mention::from(role),
+                role = Mention::from(role)
             ),
             (None, Some(intro)) => format!(
                 "Welcome to the server, {who}. Feel free to introduce yourself in {intro}",
                 who = mention,
-                intro = Mention::from(intro),
+                intro = Mention::from(intro)
             ),
-            (None, None) => format!("Welcome to the server, {who}.", who = mention,),
+            (None, None) => format!("Welcome to the server, {who}.", who = mention),
         };
 
         welcome.say(&ctx.http, message).await?;
