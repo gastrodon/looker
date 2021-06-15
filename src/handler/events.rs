@@ -1,4 +1,4 @@
-use super::{handle_verify, EMOJI_CHECK, EMOJI_CROSS};
+use super::{handle_verify, EMOJI_CHECK, EMOJI_CROSS, EMOJI_QUESTION};
 use crate::{
     client_data::{ServerConfig, ServerConfigKey},
     config_for,
@@ -27,7 +27,7 @@ impl EventHandler for Handler {
         // TODO use fallthrough match crate?
         // https://github.com/pythonesque/fallthrough
         let result = match code {
-            EMOJI_CHECK | EMOJI_CROSS => {
+            EMOJI_CHECK | EMOJI_CROSS | EMOJI_QUESTION => {
                 if let Some(channel) = config.channels.verify {
                     if channel != react.channel_id {
                         return;
