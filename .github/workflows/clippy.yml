@@ -10,6 +10,8 @@ jobs:
         steps:
             - name: Check out code
               uses: actions/checkout@v2
+            - name: Ensure apk packages
+              run: apk --no-cache add musl-dev
             - name: Install clippy
               run: rustup component add clippy
             - name: Run clippy
