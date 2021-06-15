@@ -1,0 +1,12 @@
+name: Cargo Clippy
+
+on:
+    - push
+
+jobs:
+    build:
+        container: rust:alpine
+        runs-on: ubuntu-latest
+        steps:
+            - name: Run cargo clippy
+              run: cargo clippy
