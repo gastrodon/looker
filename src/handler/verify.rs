@@ -1,12 +1,13 @@
 use super::{EMOJI_CHECK, EMOJI_CROSS, EMOJI_QUESTION};
-use lib::{config::server, config_for};
+use lib::{
+    config::server,
+    verify::{accept, open_quarantine, reject},
+};
 use serenity::{
     futures::StreamExt,
     model::{
-        channel::{Embed, Message, PermissionOverwrite, PermissionOverwriteType, Reaction},
-        guild::Member,
+        channel::{Message, Reaction},
         id::{ChannelId, RoleId, UserId},
-        misc::Mention,
         permissions::Permissions,
     },
     prelude::Context,
@@ -44,9 +45,9 @@ pub async fn handle_verify(
     };
 
     if let Err(why) = match code {
-        EMOJI_CHECK => do_verify(ctx, author.clone(), config).await,
-        EMOJI_CROSS => no_verify(ctx, author.clone(), config).await,
-        EMOJI_QUESTION => do_quarantine(ctx, author.clone(), config).await,
+        EMOJI_CHECK => accept(ctx, author.clone(), config).await,
+        EMOJI_CROSS => reject(ctx, author.clone(), config).await,
+        EMOJI_QUESTION => open_quarantine(ctx, author.clone(), config).await,
         _ => unreachable!(),
     } {
         return Err(why);
@@ -85,150 +86,6 @@ async fn may_verify(ctx: &Context, react: &Reaction, permissions: Permissions) -
     };
 
     Ok(member.permissions(&ctx).await?.contains(permissions))
-}
-
-async fn do_verify(ctx: &Context, author: Member, config: server::Config) -> Result<()> {
-    let mut author_mut = author;
-    if let Some(role) = config.verify.verified_id {
-        author_mut.add_role(&ctx.http, role).await?
-    }
-
-    if let Some(role) = config.verify.unverified_id {
-        author_mut.remove_role(&ctx.http, role).await?;
-    }
-
-    if let Some(welcome) = config.channels.welcome {
-        let mention = Mention::from(&author_mut);
-        let message = match (config.channels.role, config.channels.introduction) {
-            (Some(role), Some(intro)) => format!(
-                    "Welcome to the server, {who}. Feel free to grab some roles in {role}, or introduce yourself in {intro}",
-                who = mention,
-                role = Mention::from(role),
-                intro = Mention::from(intro)
-            ),
-            (Some(role), None) => format!(
-                    "Welcome to the server, {who}. Feel free to grab some roles in {role}",
-                who = mention,
-                role = Mention::from(role)
-            ),
-            (None, Some(intro)) => format!(
-                "Welcome to the server, {who}. Feel free to introduce yourself in {intro}",
-                who = mention,
-                intro = Mention::from(intro)
-            ),
-            (None, None) => format!("Welcome to the server, {who}.", who = mention),
-        };
-
-        welcome.say(&ctx.http, message).await?;
-    }
-
-    Ok(())
-}
-
-async fn no_verify(ctx: &Context, author: Member, config: server::Config) -> Result<()> {
-    author.kick(&ctx.http).await?;
-
-    if let Some(log) = config.channels.log {
-        log.say(
-            &ctx.http,
-            format!(
-                "{who} was rejected and kicked",
-                who = Mention::from(&author)
-            ),
-        )
-        .await?;
-    };
-
-    Ok(())
-}
-
-async fn do_quarantine(ctx: &Context, author: Member, config: server::Config) -> Result<()> {
-    let name = format!(
-        "quarantine-{}-{}",
-        author.user.name, author.user.discriminator
-    );
-
-    let channel = author
-        .guild_id
-        .create_channel(&ctx.http, |it| {
-            it.name(&name).permissions(vec![PermissionOverwrite {
-                allow: Permissions::empty(),
-                deny: Permissions::READ_MESSAGES | Permissions::SEND_MESSAGES,
-                kind: PermissionOverwriteType::Role((*author.guild_id.as_u64()).into()),
-            }])
-        })
-        .await?;
-
-    {
-        let id = author.guild_id;
-
-        let mut handle = ctx.data.write().await;
-        let mut config = config_for!(id, handle);
-        config.start_quarantine(channel.id);
-
-        let mut table = handle.get::<server::Key>().unwrap().clone();
-        table.set(id, config);
-        handle.insert::<server::Key>(table);
-    }
-
-    channel
-        .create_permission(
-            &ctx.http,
-            &PermissionOverwrite {
-                allow: Permissions::READ_MESSAGES | Permissions::SEND_MESSAGES,
-                deny: Permissions::empty(),
-                kind: PermissionOverwriteType::Member(author.user.id),
-            },
-        )
-        .await
-        .ok();
-
-    channel
-        .say(
-            &ctx.http,
-            format!(
-                "Hello {who}, we've moved you in here to chat before you're verified",
-                who = Mention::from(author.user.id)
-            ),
-        )
-        .await
-        .ok();
-
-    if let Some(channel_id) = config.channels.verify {
-        let mut buffer = Vec::<Message>::new();
-        let mut handle = channel_id.messages_iter(&ctx.http).boxed();
-
-        while let Some(next) = handle.next().await {
-            if let Ok(message) = next {
-                if message.author.id == author.user.id {
-                    buffer.push(message)
-                };
-            };
-        }
-
-        let webhook = channel.create_webhook(&ctx.http, &name).await?;
-        let avatar_url = author
-            .user
-            .avatar_url()
-            .unwrap_or_else(|| author.user.default_avatar_url());
-
-        for message in buffer.iter().rev() {
-            webhook
-                .execute(&ctx.http, true, |it| {
-                    it.embeds(vec![Embed::fake(|embed| {
-                        embed.description(&message.content)
-                    })])
-                    .avatar_url(&avatar_url)
-                    .username(&author.user.name)
-                })
-                .await
-                .ok();
-
-            message.delete(&ctx.http).await.ok();
-        }
-    };
-
-    Ok(())
 }
 
 async fn purge_messages(ctx: &Context, author_id: UserId, channel_id: ChannelId) -> Result<()> {
