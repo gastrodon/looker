@@ -6,9 +6,13 @@ use serenity::{
     },
     prelude::TypeMapKey,
 };
-use std::{collections::HashMap, convert::Into, default::Default};
+use std::{
+    collections::{HashMap, HashSet},
+    convert::Into,
+    default::Default,
+};
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Channels {
     pub introduction: Option<ChannelId>,
     pub jail: Option<ChannelId>,
@@ -16,6 +20,8 @@ pub struct Channels {
     pub role: Option<ChannelId>,
     pub verify: Option<ChannelId>,
     pub welcome: Option<ChannelId>,
+
+    pub quarantine: HashSet<ChannelId>,
 }
 
 impl Channels {
@@ -27,6 +33,8 @@ impl Channels {
             role: None,
             verify: None,
             welcome: None,
+
+            quarantine: HashSet::new(),
         }
     }
 }
@@ -75,12 +83,20 @@ impl ServerConfig {
     }
 
     pub fn have_channels(&mut self, channels: Channels) -> Channels {
-        self.channels = channels;
+        self.channels = channels.clone();
         channels
     }
 
     pub fn keep_roles(&mut self, who: Member) {
         self.kept_roles.insert(who.user.id, who.roles);
+    }
+
+    pub fn start_quarantine(&mut self, channel: ChannelId) {
+        self.channels.quarantine.insert(channel);
+    }
+
+    pub fn drop_quarantine(&mut self, channel: &ChannelId) {
+        self.channels.quarantine.remove(channel);
     }
 }
 

@@ -1,3 +1,5 @@
+#![feature(iter_intersperse)]
+
 mod client_data;
 mod commands;
 mod handler;
@@ -9,6 +11,7 @@ use serenity::{
     model::id::{ChannelId, GuildId, RoleId},
     prelude::Client,
 };
+use std::collections::HashSet;
 
 async fn populate_config_table(client: &mut Client) {
     client
@@ -31,6 +34,8 @@ async fn trans_default_config(client: &mut Client) {
         role: Some(ChannelId(611966830034026496)),
         verify: Some(ChannelId(718170301682417754)),
         welcome: Some(ChannelId(807718099235241994)),
+
+        quarantine: HashSet::new(),
     };
 
     config.verify = Verify::new(
