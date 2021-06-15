@@ -1,0 +1,9 @@
+name: Configure
+
+jobs:
+  configure:
+    container: rust:alpine
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure apk packages
+        run: apk --no-cache add musl-dev
