@@ -1,7 +1,5 @@
-use crate::{
-    client_data::{ServerConfig, ServerConfigKey},
-    config_for, maybe,
-};
+use crate::{config_for, maybe};
+use lib::config::server;
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::{channel::Message, id::ChannelId},

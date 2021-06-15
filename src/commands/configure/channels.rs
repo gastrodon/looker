@@ -1,7 +1,5 @@
-use crate::{
-    client_data::{ServerConfig, ServerConfigKey},
-    edit, maybe,
-};
+use crate::{edit, maybe};
+use lib::config::server;
 use serenity::{
     framework::standard::macros::command,
     framework::standard::{Args, CommandResult},
@@ -41,9 +39,9 @@ pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> Comma
     let mut sent = maybe!(channel.say(&ctx.http, "collecting channels").await, Result);
 
     let mut handle = ctx.data.write().await;
-    let mut config = handle.get::<ServerConfigKey>().unwrap().clone();
+    let mut config = handle.get::<server::Key>().unwrap().clone();
     let id = message.guild_id.unwrap();
-    let mut table = config.get(id).unwrap_or(&ServerConfig::new()).clone();
+    let mut table = config.get(id).unwrap_or(&server::Config::new()).clone();
 
     while let (Ok(name), Ok(channel)) = (args.single::<String>(), args.single::<ChannelId>()) {
         match name.as_str() {
@@ -67,7 +65,7 @@ pub async fn channels(ctx: &Context, message: &Message, mut args: Args) -> Comma
     }
 
     config.set(id, table);
-    handle.insert::<ServerConfigKey>(config);
+    handle.insert::<server::Key>(config);
     maybe!(edit!(&ctx.http, sent, "config set"), Result);
     Ok(())
 }

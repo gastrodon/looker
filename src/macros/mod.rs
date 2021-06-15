@@ -28,11 +28,11 @@ macro_rules! edit {
 macro_rules! config_for {
     ($id:expr, $handle:expr) => {
         $handle
-            .get::<ServerConfigKey>()
+            .get::<server::Key>()
             .unwrap()
             .clone()
             .get($id)
-            .unwrap_or(&ServerConfig::new())
+            .unwrap_or(&server::Config::new())
             .clone();
     };
 }

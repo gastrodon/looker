@@ -1,6 +1,6 @@
-use crate::client_data::{ServerConfig, ServerConfigKey};
 use crate::{config_for, edit, maybe};
 use chrono::offset::Utc;
+use lib::config::server;
 use serenity::{
     framework::standard::macros::command,
     framework::standard::{Args, CommandResult},

@@ -1,11 +1,10 @@
 #![feature(iter_intersperse)]
 
-mod client_data;
 mod commands;
 mod handler;
 mod macros;
 
-use client_data::{Channels, ServerConfig, ServerConfigKey, Verify};
+use lib::config::server;
 use serenity::{
     framework::standard::StandardFramework,
     model::id::{ChannelId, GuildId, RoleId},
@@ -18,7 +17,7 @@ async fn populate_config_table(client: &mut Client) {
         .data
         .write()
         .await
-        .insert::<client_data::ServerConfigKey>(client_data::ServerConfigTable::new());
+        .insert::<server::Key>(server::Table::new());
 }
 
 // TODO this is going away when we are database backed
@@ -27,7 +26,7 @@ async fn trans_default_config(client: &mut Client) {
     let mut handle = client.data.write().await;
     let mut config = config_for!(trans_id, handle);
 
-    config.channels = Channels {
+    config.channels = server::Channels {
         introduction: Some(ChannelId(527581457279877131)),
         jail: Some(ChannelId(796061859659776041)),
         log: Some(ChannelId(796242938769571890)),
@@ -38,15 +37,15 @@ async fn trans_default_config(client: &mut Client) {
         quarantine: HashSet::new(),
     };
 
-    config.verify = Verify::new(
+    config.verify = server::Verify::new(
         Some(RoleId(528098139044053002)),
         Some(RoleId(836752745665921044)),
         None,
     );
 
-    let mut table = handle.get::<ServerConfigKey>().unwrap().clone();
+    let mut table = handle.get::<server::Key>().unwrap().clone();
     table.set(trans_id, config);
-    handle.insert::<ServerConfigKey>(table);
+    handle.insert::<server::Key>(table);
     println!("trans server config set");
 }
 

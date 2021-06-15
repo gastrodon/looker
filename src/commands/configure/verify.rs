@@ -1,7 +1,5 @@
-use crate::{
-    client_data::{ServerConfig, ServerConfigKey},
-    config_for, edit, maybe,
-};
+use crate::{config_for, edit, maybe};
+use lib::config::server;
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::{channel::Channel, channel::Message, id::RoleId},
@@ -71,9 +69,9 @@ async fn set_role(ctx: &Context, channel: Channel, args: Args, kind: &str) -> Co
         _ => unreachable!(),
     };
 
-    let mut table = handle.get::<ServerConfigKey>().unwrap().clone();
+    let mut table = handle.get::<server::Key>().unwrap().clone();
     table.set(guild.id, config);
-    handle.insert::<ServerConfigKey>(table);
+    handle.insert::<server::Key>(table);
 
     maybe!(
         edit!(&ctx.http, sent, format!("Verify is `@{role}`", role = name)),

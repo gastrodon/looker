@@ -67,15 +67,15 @@ impl Verify {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct ServerConfig {
+pub struct Config {
     pub channels: Channels,
     pub kept_roles: HashMap<UserId, Vec<RoleId>>,
     pub verify: Verify,
 }
 
-impl ServerConfig {
+impl Config {
     pub fn new() -> Self {
-        ServerConfig {
+        Config {
             channels: Channels::new(),
             kept_roles: HashMap::new(),
             verify: Verify::new(None, None, None),
@@ -101,36 +101,32 @@ impl ServerConfig {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct ServerConfigTable {
-    cache: HashMap<u64, ServerConfig>,
+pub struct Table {
+    cache: HashMap<u64, Config>,
 }
 
-impl ServerConfigTable {
+impl Table {
     pub fn new() -> Self {
-        ServerConfigTable {
+        Table {
             cache: HashMap::new(),
         }
     }
 
-    pub fn get<T: Into<u64>>(&self, key: T) -> Option<&ServerConfig> {
+    pub fn get<T: Into<u64>>(&self, key: T) -> Option<&Config> {
         self.cache.get(&key.into())
     }
 
-    pub fn set<T: Into<u64>, V: Into<ServerConfig>>(
-        &mut self,
-        key: T,
-        value: V,
-    ) -> Option<ServerConfig> {
+    pub fn set<T: Into<u64>, V: Into<Config>>(&mut self, key: T, value: V) -> Option<Config> {
         self.cache.insert(key.into(), value.into())
     }
 
-    pub fn provision<T: Into<u64>>(&mut self, key: T) -> Option<ServerConfig> {
-        self.cache.insert(key.into(), ServerConfig::new())
+    pub fn provision<T: Into<u64>>(&mut self, key: T) -> Option<Config> {
+        self.cache.insert(key.into(), Config::new())
     }
 }
 
-pub struct ServerConfigKey;
+pub struct Key;
 
-impl TypeMapKey for ServerConfigKey {
-    type Value = ServerConfigTable;
+impl TypeMapKey for Key {
+    type Value = Table;
 }

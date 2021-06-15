@@ -1,8 +1,6 @@
 use super::{EMOJI_CHECK, EMOJI_CROSS, EMOJI_QUESTION};
-use crate::{
-    client_data::{ServerConfig, ServerConfigKey},
-    config_for,
-};
+use crate::config_for;
+use lib::config::server;
 use serenity::{
     futures::StreamExt,
     model::{
@@ -20,7 +18,7 @@ pub async fn handle_verify(
     ctx: &Context,
     react: &Reaction,
     code: &str,
-    config: ServerConfig,
+    config: server::Config,
 ) -> Result<()> {
     if !may_verify(ctx, react, config.verify.permissions_required).await? {
         return Ok(());
@@ -90,7 +88,7 @@ async fn may_verify(ctx: &Context, react: &Reaction, permissions: Permissions) -
     Ok(member.permissions(&ctx).await?.contains(permissions))
 }
 
-async fn do_verify(ctx: &Context, author: Member, config: ServerConfig) -> Result<()> {
+async fn do_verify(ctx: &Context, author: Member, config: server::Config) -> Result<()> {
     let mut author_mut = author;
     if let Some(role) = config.verify.verified_id {
         author_mut.add_role(&ctx.http, role).await?
@@ -128,7 +126,7 @@ async fn do_verify(ctx: &Context, author: Member, config: ServerConfig) -> Resul
     Ok(())
 }
 
-async fn no_verify(ctx: &Context, author: Member, config: ServerConfig) -> Result<()> {
+async fn no_verify(ctx: &Context, author: Member, config: server::Config) -> Result<()> {
     author.kick(&ctx.http).await?;
 
     if let Some(log) = config.channels.log {
@@ -145,7 +143,7 @@ async fn no_verify(ctx: &Context, author: Member, config: ServerConfig) -> Resul
     Ok(())
 }
 
-async fn do_quarantine(ctx: &Context, author: Member, config: ServerConfig) -> Result<()> {
+async fn do_quarantine(ctx: &Context, author: Member, config: server::Config) -> Result<()> {
     let name = format!(
         "quarantine-{}-{}",
         author.user.name, author.user.discriminator
@@ -169,9 +167,9 @@ async fn do_quarantine(ctx: &Context, author: Member, config: ServerConfig) -> R
         let mut config = config_for!(id, handle);
         config.start_quarantine(channel.id);
 
-        let mut table = handle.get::<ServerConfigKey>().unwrap().clone();
+        let mut table = handle.get::<server::Key>().unwrap().clone();
         table.set(id, config);
-        handle.insert::<ServerConfigKey>(table);
+        handle.insert::<server::Key>(table);
     }
 
     channel
