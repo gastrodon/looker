@@ -1,4 +1,7 @@
+name: Cargo Clippy
+
 runs:
+  using: composite
   steps:
     - name: Install clippy
       run: rustup component add clippy

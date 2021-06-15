@@ -1,6 +1,7 @@
 name: Configure
 
 runs:
+  using: composite
   steps:
     - name: Ensure apk packages
       run: apk --no-cache add musl-dev
