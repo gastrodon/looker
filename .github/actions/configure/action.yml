@@ -4,4 +4,5 @@ runs:
   using: composite
   steps:
     - name: Ensure apk packages
+      shell: ash
       run: apk --no-cache add musl-dev
