@@ -1,5 +1,4 @@
-use crate::{config_for, edit, maybe};
-use lib::config::server;
+use lib::{config::server, config_for, edit, maybe};
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::{channel::Channel, channel::Message, id::RoleId},

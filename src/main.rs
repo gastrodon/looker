@@ -1,10 +1,7 @@
-#![feature(iter_intersperse)]
-
 mod commands;
 mod handler;
-mod macros;
 
-use lib::config::server;
+use lib::{config::server, config_for};
 use serenity::{
     framework::standard::StandardFramework,
     model::id::{ChannelId, GuildId, RoleId},

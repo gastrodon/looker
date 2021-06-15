@@ -1,5 +1,4 @@
-use crate::{edit, maybe};
-use lib::config::server;
+use lib::{config::server, edit, maybe};
 use serenity::{
     framework::standard::macros::command,
     framework::standard::{Args, CommandResult},

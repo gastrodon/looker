@@ -1,6 +1,5 @@
 use super::{handle_verify, EMOJI_CHECK, EMOJI_CROSS, EMOJI_QUESTION};
-use crate::config_for;
-use lib::config::server;
+use lib::{config::server, config_for};
 use serenity::{
     async_trait,
     model::channel::{Reaction, ReactionType},
