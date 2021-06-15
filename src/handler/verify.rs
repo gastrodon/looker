@@ -8,7 +8,7 @@ use serenity::{
     model::{
         channel::{Embed, Message, PermissionOverwrite, PermissionOverwriteType, Reaction},
         guild::Member,
-        id::RoleId,
+        id::{ChannelId, RoleId, UserId},
         misc::Mention,
         permissions::Permissions,
     },
@@ -31,31 +31,31 @@ pub async fn handle_verify(
         return Ok(());
     };
 
-    let author = match message.channel(&ctx.cache).await {
-        Some(channel) => match channel.guild() {
-            Some(guild_channel) => {
-                guild_channel
-                    .guild_id
-                    .member(&ctx.http, &message.author)
-                    .await?
-            }
-            None => return Err(Error::Other("channel isn't a guild_channel")),
-        },
+    let channel = match message.channel(&ctx.cache).await {
+        Some(channel) => channel,
         None => return Err(Error::Other("message not in a channel")),
     };
 
-    match code {
-        EMOJI_CHECK => match do_verify(ctx, author, config).await {
-            Ok(_) => message.delete(&ctx.http).await,
-            Err(why) => Err(why),
-        },
-        EMOJI_CROSS => match no_verify(ctx, author, config).await {
-            Ok(_) => message.delete(&ctx.http).await,
-            Err(why) => Err(why),
-        },
-        EMOJI_QUESTION => do_quarantine(ctx, author, config).await,
+    let author = match channel.clone().guild() {
+        Some(guild_channel) => {
+            guild_channel
+                .guild_id
+                .member(&ctx.http, &message.author)
+                .await?
+        }
+        None => return Err(Error::Other("channel isn't a guild_channel")),
+    };
+
+    if let Err(why) = match code {
+        EMOJI_CHECK => do_verify(ctx, author.clone(), config).await,
+        EMOJI_CROSS => no_verify(ctx, author.clone(), config).await,
+        EMOJI_QUESTION => do_quarantine(ctx, author.clone(), config).await,
         _ => unreachable!(),
-    }
+    } {
+        return Err(why);
+    };
+
+    purge_messages(ctx, author.user.id, channel.id()).await
 }
 
 async fn already_verified(
@@ -230,6 +230,22 @@ async fn do_quarantine(ctx: &Context, author: Member, config: ServerConfig) -> R
             message.delete(&ctx.http).await.ok();
         }
     };
+
+    Ok(())
+}
+
+async fn purge_messages(ctx: &Context, author_id: UserId, channel_id: ChannelId) -> Result<()> {
+    let mut handle = channel_id.messages_iter(&ctx.http).boxed();
+
+    while let Some(next) = handle.next().await {
+        if let Ok(message) = next {
+            if message.author.id == author_id {
+                if let Err(why) = message.delete(&ctx.http).await {
+                    return Err(why);
+                }
+            };
+        };
+    }
 
     Ok(())
 }
