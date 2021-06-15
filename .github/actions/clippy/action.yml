@@ -4,8 +4,8 @@ runs:
   using: composite
   steps:
     - name: Install clippy
-      shell: ash
+      shell: sh
       run: rustup component add clippy
     - name: Run clippy
-      shell: ash
+      shell: sh
       run: cargo clippy
