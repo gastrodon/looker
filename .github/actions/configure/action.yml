@@ -5,4 +5,4 @@ runs:
   steps:
     - name: Ensure apk packages
       shell: sh
-      run: apk --no-cache add musl-dev
+      run: apk --no-cache add docker musl-dev
