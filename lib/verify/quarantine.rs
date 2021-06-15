@@ -33,7 +33,7 @@ pub async fn open_quarantine(ctx: &Context, author: Member, config: server::Conf
 
         let mut handle = ctx.data.write().await;
         let mut config = config_for!(id, handle);
-        config.start_quarantine(channel.id);
+        config.start_quarantine(channel.id, author.user.id);
 
         let mut table = handle.get::<server::Key>().unwrap().clone();
         table.set(id, config);

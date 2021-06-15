@@ -7,7 +7,7 @@ use serenity::{
     model::id::{ChannelId, GuildId, RoleId},
     prelude::Client,
 };
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 async fn populate_config_table(client: &mut Client) {
     client
@@ -31,7 +31,7 @@ async fn trans_default_config(client: &mut Client) {
         verify: Some(ChannelId(718170301682417754)),
         welcome: Some(ChannelId(807718099235241994)),
 
-        quarantine: HashSet::new(),
+        quarantine: HashMap::new(),
     };
 
     config.verify = server::Verify::new(
