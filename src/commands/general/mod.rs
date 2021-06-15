@@ -6,8 +6,8 @@ mod verify;
 
 use about::ABOUT_COMMAND;
 use unverified::UNVERIFIED_COMMAND;
-use verify::{ACCEPT_COMMAND, DENY_COMMAND};
+use verify::{ACCEPT_COMMAND, REJECT_COMMAND};
 
 #[group]
-#[commands(about, unverified, accept, deny)]
+#[commands(about, unverified, accept, reject)]
 pub struct General;
