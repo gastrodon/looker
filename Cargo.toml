@@ -17,6 +17,9 @@ path = "src/main.rs"
 [dependencies.chrono]
 version = "0.4.10" # Same as serenity Cargo.toml
 
+[dependencies.mysql]
+version = "~20"
+
 [dependencies.serenity]
 version = "~0.10"
 features = ["framework", "standard_framework", "rustls_backend"]
