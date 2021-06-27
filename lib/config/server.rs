@@ -1,3 +1,4 @@
+use mysql::Pool;
 use serenity::{
     model::{
         guild::Member,
@@ -104,15 +105,17 @@ impl Config {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Table {
     cache: HashMap<u64, Config>,
+    mysql_pool: Pool,
 }
 
 impl Table {
-    pub fn new() -> Self {
+    pub fn new(pool: Pool) -> Self {
         Table {
             cache: HashMap::new(),
+            mysql_pool: pool,
         }
     }
 

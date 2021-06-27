@@ -2,6 +2,7 @@ mod commands;
 mod handler;
 
 use lib::{config::server, config_for};
+use mysql::Pool;
 use serenity::{
     framework::standard::StandardFramework,
     model::id::{ChannelId, GuildId, RoleId},
@@ -10,11 +11,14 @@ use serenity::{
 use std::collections::HashMap;
 
 async fn populate_config_table(client: &mut Client) {
+    let address = std::env::var("LOOKER_CONNECTION").expect("LOOKER_CONNECTION missing");
+    let pool = Pool::new(address).expect("Can't connect to LOOKER_CONNECTION");
+
     client
         .data
         .write()
         .await
-        .insert::<server::Key>(server::Table::new());
+        .insert::<server::Key>(server::Table::new(pool));
 }
 
 // TODO this is going away when we are database backed
